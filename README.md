@@ -55,7 +55,6 @@ root
 ├── package.json
 └── README.md
 
-
 ---
 
 ## 🔐 Environment Variables
@@ -69,12 +68,13 @@ EMAIL_USER=your_email@example.com
 EMAIL_PASS=your_email_password
 RAZORPAY_KEY_ID=your_razorpay_key_id  # (for later use)
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret  # (for later use)
+```
 
+---
 
-🧪 Upcoming Features
+## 🧪 Upcoming Features
 
-✅ Razorpay payment integration
-🔄 Payment status sync with Razorpay
-📱 PWA support (Installable App)
+✅ Razorpay payment integration  
+🔄 Payment status sync with Razorpay  
+📱 PWA support (Installable App)  
 📊 Analytics Dashboard (Total spent, top contributors)
-
