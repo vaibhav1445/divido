@@ -1,46 +1,45 @@
-// const Razorpay = require('razorpay');
-// const express = require('express');
-// const router = express.Router();
+const express = require("express");
+const Stripe = require("stripe");
+const dotenv = require("dotenv");
 
+dotenv.config();
 
-// // Initialize Razorpay instance
-// const razorpay = new Razorpay({
-//   key_id: process.env.RAZORPAY_KEY_ID,
-//   key_secret: process.env.RAZORPAY_KEY_SECRET,
-// });
+const router = express.Router();
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// const auth = (req, res, next) => {
-//   const token = req.header('Authorization');
-//   if (!token) return res.status(401).json({ msg: 'No token, authorization denied' });
+// Route: POST /api/payment/create-checkout-session
+router.post("/create-checkout-session", async (req, res) => {
+  const { amount, title } = req.body;
 
-//   try {
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-//     req.user = decoded.id;
-//     next();
-//   } catch (err) {
-//     return res.status(401).json({ msg: 'Token is not valid' });
-//   }
-// };
+  if (!amount || !title) {
+    return res.status(400).json({ message: "Amount and title are required." });
+  }
 
-// // ✅ Create Razorpay Order API (POST /api/expenses/create-order)
-// router.post('/create-order', auth, async (req, res) => {
-//   try {
-//     const { amount, currency = 'INR' } = req.body;
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      line_items: [
+        {
+          price_data: {
+            currency: "inr",
+            product_data: {
+              name: title,
+            },
+            unit_amount: Math.round(amount * 100), // ₹100 => 10000 paise
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${process.env.CLIENT_URL}/payment-success`,
+      cancel_url: `${process.env.CLIENT_URL}/dashboard`,
+    });
 
-//     if (!amount) {
-//       return res.status(400).json({ msg: 'Amount is required' });
-//     }
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error("Stripe Error:", error);
+    res.status(500).json({ message: "Stripe session creation failed." });
+  }
+});
 
-//     const options = {
-//       amount: amount * 100,      // Convert to paise (smallest unit of INR)
-//       currency,
-//       receipt: `receipt_order_${Date.now()}`,
-//     };
-
-//     const order = await razorpay.orders.create(options);
-//     return res.status(200).json(order);
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ msg: 'Server Error while creating order' });
-//   }
-// });
+module.exports = router;
