@@ -1,10 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axiosInstance from "../utils/axiosInstance";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ExpenseList from "../components/Expenses/ExpenseList";
-import { LogOut, Plus, Home, Wallet, UserCircle2, IndianRupee } from "lucide-react";
+import {
+  LogOut,
+  Plus,
+  Home,
+  Wallet,
+  UserCircle2,
+  IndianRupee,
+} from "lucide-react";
 
-//Function to decode JWT and get user ID
+// Function to decode JWT and get user ID
 const getUserIdFromToken = () => {
   try {
     const token = localStorage.getItem("token");
@@ -23,37 +30,23 @@ const Dashboard = () => {
   const [error, setError] = useState("");
   const [activeSection, setActiveSection] = useState("home");
   const navigate = useNavigate();
-  const userId = getUserIdFromToken(); //Get logged-in user ID
-  console.log("User ID from token:", userId); 
-  console.log("Participants:", expenses.flatMap((exp) => exp.participants));
+  const userId = getUserIdFromToken(); 
 
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        const response = await axiosInstance.get("/expenses");
-        setExpenses(response.data);
-      } catch (err) {
-        setError(err.response?.data?.msg || "Something went wrong");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchExpenses();
+  const fetchExpenses = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get("/expenses");
+      setExpenses(response.data);
+    } catch (err) {
+      setError(err.response?.data?.msg || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-   useEffect(() => {
-    if (expenses.length) {
-      expenses.forEach(exp => {
-        console.log("Expense:", exp.amount, exp.participants);
-      });
-    }
-  }, [expenses]);
-
-expenses.flatMap((exp) => exp.participants).forEach((p) => {
-  console.log("Participant -> paid:", p.paid, "share:", p.share, "userID:", p.user._id);
-});
-
+  useEffect(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
 
   const handleDelete = async (id) => {
     try {
@@ -70,18 +63,27 @@ expenses.flatMap((exp) => exp.participants).forEach((p) => {
     navigate("/login");
   };
 
-  //Calculate "My Amount to be Paid"
-const myUnpaidAmount = expenses
-  .flatMap((exp) => exp.participants)
-  .filter((p) => !p.paid && String(p.user._id) === String(userId))
-  .reduce((total, p) => total + (p.share || 0), 0);
+  const location = useLocation();
 
-  //  Calculate Total Amount of All Expenses (regardless of user)
+useEffect(() => {
+  const query = new URLSearchParams(location.search);
+  if (query.get("refresh") === "true") {
+    fetchExpenses();
+  }
+}, [location.search, fetchExpenses]);
+
+  // Calculate user's unpaid amount
+  const myUnpaidAmount = expenses
+    .flatMap((exp) => exp.participants)
+    .filter((p) => !p.paid && String(p.user._id) === String(userId))
+    .reduce((total, p) => total + (p.share || 0), 0);
+
   const totalAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-
   const totalPendingPayments = expenses
     .flatMap((exp) => exp.participants)
     .filter((p) => !p.paid).length;
+
+
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -130,10 +132,15 @@ const myUnpaidAmount = expenses
         </button>
 
         <button
-          onClick={() => navigate("/payment-section",{
-            state: { amount: myUnpaidAmount, title: "My Unpaid Amount" }
-          })
-        }  
+          onClick={() =>
+            navigate("/payment-section", {
+              state: {
+                amount: myUnpaidAmount,
+                title: "My Unpaid Amount",
+                onPaymentSuccess: fetchExpenses.toString(), // passing callback identifier
+              },
+            })
+          }
           className="flex items-center gap-2 px-4 py-2 rounded-xl border bg-orange-600 text-white hover:bg-orange-700"
         >
           <IndianRupee size={18} />
@@ -154,7 +161,9 @@ const myUnpaidAmount = expenses
         <div className="bg-white rounded-xl p-6 shadow-md">
           <h2 className="text-2xl font-semibold mb-2">Welcome to Divido 🪙</h2>
           <p className="text-gray-600 mb-4">
-            <strong>Divido</strong> helps you manage shared expenses effortlessly. Track your expenses, split bills with friends, and never miss a payment!
+            <strong>Divido</strong> helps you manage shared expenses
+            effortlessly. Track your expenses, split bills with friends, and
+            never miss a payment!
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Calendar, CheckCircle, XCircle } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import axiosInstance from "../../utils/axiosInstance";
+import { useLocation } from "react-router-dom"; 
 
 const ExpenseList = () => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [marking, setMarking] = useState(null); // holds participantId when marking paid
+  const [marking, setMarking] = useState(null);
+  const location = useLocation(); 
 
   const fetchExpenses = async () => {
     try {
@@ -22,7 +24,7 @@ const ExpenseList = () => {
 
   useEffect(() => {
     fetchExpenses();
-  }, []);
+  }, [location]);
 
   const handleMarkPaid = async (expenseId, participantId) => {
     try {
@@ -30,8 +32,8 @@ const ExpenseList = () => {
       await axiosInstance.patch(`/expenses/${expenseId}/mark-paid`, {
         participantId,
       });
-      toast.success("✅ Marked as Paid");
-      fetchExpenses();
+      toast.success(" Marked as Paid");
+      fetchExpenses(); //
     } catch (error) {
       toast.error("❌ Failed to mark as paid");
     } finally {
@@ -61,10 +63,7 @@ const ExpenseList = () => {
             <div className="mt-2 text-gray-800 font-medium mb-1">Participants:</div>
             <ul className="mt-1 space-y-2">
               {exp.participants.map((p, index) => (
-                <li
-                  key={index}
-                  className="bg-gray-50 px-3 py-2 rounded-lg text-sm"
-                >
+                <li key={index} className="bg-gray-50 px-3 py-2 rounded-lg text-sm">
                   <div className="flex justify-between items-center text-gray-700">
                     <span>{p.user?.email || p.email || p.name || "Unknown"}</span>
                     <span className="font-semibold text-gray-900">₹{Number(p.share).toFixed(2)}</span>

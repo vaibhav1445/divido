@@ -3,14 +3,16 @@ import Login from "./components/Auth/Login";
 import Register from "./components/Auth/Register";
 import Dashboard from "./pages/Dashboard";
 import AddExpense from "./pages/AddExpense";
-import Profile from "./components/Profile"; 
+import Profile from "./components/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
-import PaymentScreen from "./pages/PaymentScreen"; // Assuming you have a PaymentSection component
+import PaymentScreen from "./pages/PaymentScreen";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
       <Routes>
         {/* Default route redirects to login */}
         <Route path="/" element={<Navigate to="/login" />} />
@@ -49,6 +51,16 @@ function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Optional: Payment Success Page */}
+        <Route
+          path="/payment-success"
+          element={
+            <ProtectedRoute>
+              <PaymentSuccess />
             </ProtectedRoute>
           }
         />
